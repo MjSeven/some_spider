@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Date    : 2018-01-07 19:36:42
 # @Author  : mz (yuchenmj@163.com)
@@ -17,6 +17,7 @@ headers = {"User_Agent": user_agent}
 
 
 def get_index_html(stu_number, passwd):
+    # 获取到登入时的页面
     response = s.get(url)
     index = bs(response.content, 'lxml')
     __VIEWSTATE = index.find("input").get("value")
@@ -52,6 +53,7 @@ def get_index_html(stu_number, passwd):
 
 
 def get_score(stu_number):
+    # 获取到查询成绩的页面并显示
     post_data = {
         "btn_xq": "%D1%A7%C6%DA%B3%C9%BC%A8",
         "ddlXN": "2017-2018",
@@ -73,34 +75,39 @@ def get_score(stu_number):
     get_score = get_score.decode("gb2312")
     # 将获取到的框架源代码保存下来，方便提取__EVENTARGUMENT和__VIEWSTATE值后作为post内容进行下一步
     # with open("socre.html", "wb") as score_file:
-    #     score_file.write(get_scorce)
+    #     score_file.write(get_score)
     post_info = bs(get_score, "lxml")
     infos = post_info.find_all("input")[:3]
-    post_data["__EVENTTARGET"] = infos[0].get("value")
-    post_data["__EVENTARGUMENT"] = infos[1].get("value")
-    post_data["__VIEWSTATE"] = infos[2].get("value")
+    # 有时候会查不到成绩选项这一栏，可能系统正在维护
+    if infos:
+        post_data["__EVENTTARGET"] = infos[0].get("value")
+        post_data["__EVENTARGUMENT"] = infos[1].get("value")
+        post_data["__VIEWSTATE"] = infos[2].get("value")
 
-    real_score = s.post(score_url, data=post_data, headers=headers).content
+        real_score = s.post(score_url, data=post_data, headers=headers).content
 
-    # 得到真正的包含成绩的页面，之后就可以提取成绩了
-    # with open("real_score.html", "wb") as real:
-    #     real.write(real_score)
-    real_score = real_score.decode("gb2312")
+        # 得到真正的包含成绩的页面，之后就可以提取成绩了
+        # with open("real_score.html", "wb") as real:
+        #     real.write(real_score)
+        real_score = real_score.decode("gb2312")
 
-    real = bs(real_score, "lxml")
-    # 查找成绩并显示
-    one = real.find_all("table", class_="datelist")
-    # print one[-1].get_text()
-    tab = one[0]
-    trs = tab.find_all("tr")
-    for tr in trs:
-        for td in tr.find_all("td"):
-            print td.get_text().strip(), "  ",
-        print
+        real = bs(real_score, "lxml")
+
+        one = real.find_all("table", class_="datelist")
+        # print one[-1].get_text()
+        tab = one[0]
+
+        trs = tab.find_all("tr")
+        for tr in trs:
+            for td in tr.find_all("td"):
+                print td.get_text().strip(), "  ",
+            print
+    else:
+        print "网页出错了，请登陆官网！"
 
 
 if __name__ == '__main__':
-    stu_number = raw_input("请输入学号:")
-    passwd = raw_input("请输入密码:")
+    stu_number = raw_input("请输入学号:").strip()
+    passwd = raw_input("请输入密码:").strip()
     get_index_html(stu_number, passwd)
     get_score(stu_number)
