@@ -1,9 +1,17 @@
-import requests
+# _*_ coding:utf-8 _*_
 import json
+import requests
+from datetime import datetime
 
 
-url = 'http://dianying.nuomi.com/movie/boxrefresh'
-data = {'isAjax': 'true', 'date': '2018-04-29'}
+"""
+功能：查看当前电影票房
+输出格式：
+电影名称 实时票房：xxx 累计票房：xxx 上映天数：xxx
+此接口默认返回 20 条数据
+改进点：
+异常处理，格式处理
+"""
 # headers 建议更全一些,里面的 cookie 每次应该会变
 """
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0'}
@@ -15,21 +23,25 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gec
 'Referer': 'http://dianying.nuomi.com/movie/boxoffice', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
 """
 
-r = requests.post(url, data=data, headers=headers)
-content = json.loads(r.text)
-movie_list = content['real']['data']['detail']
+url = 'http://dianying.nuomi.com/movie/boxrefresh'
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0'}
 
-# 解析并输出
-for movie in movie_list:
-    movie_name = movie['movieName']
-    title1 = movie['attribute']['2']['attrName']
-    all_box_office = movie['attribute']['2']['attrValue']
-    title2 = movie['attribute']['3']['attrName']
-    cur_box_office  = movie['attribute']['3']['attrValue']
-    print movie_name, title1,":",all_box_office,title2,":", cur_box_office
+def get_detail(url, data):
+    r = requests.post(url, data=data, headers=headers)
+    content = json.loads(r.text)
+    movie_list = content['real']['data']['detail']
 
-"""
-输出格式：
-电影名称 累计票房：xxx 实时票房：xxx
-此接口默认返回 20 条数据
-"""
+    for movie in movie_list:
+        movie_name = movie['movieName']
+        all_box_office = movie['attribute']['2']['attrValue']
+        cur_box_office  = movie['attribute']['3']['attrValue']
+        up_days = movie['attribute']['1']['attrValue']
+        print movie_name, u"实时票房:",cur_box_office, u"累计票房:", all_box_office,
+        print u"上映天数:",up_days
+
+
+if __name__ == '__main__':
+    dt = datetime.now()
+    date = '-'.join([str(dt.year), str(dt.month), str(dt.day)])
+    data = {'isAjax': 'true', 'date':date}
+    get_detail(url, data)
